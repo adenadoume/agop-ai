@@ -1,0 +1,47 @@
+name: Deploy Backend to Oracle VM
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Oracle VM via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.ORACLE_HOST }}
+          username: ${{ secrets.ORACLE_USER }}
+          key: ${{ secrets.ORACLE_SSH_KEY }}
+          script: |
+            # Clone repo if not exists, otherwise pull
+            if [ -d ~/agop-ai ]; then
+              cd ~/agop-ai && git pull origin main
+            else
+              git clone https://github.com/adenadoume/agop-ai.git ~/agop-ai
+            fi
+
+            cd ~/agop-ai/backend
+
+            # Stop and remove old container
+            docker stop agop-ai-backend 2>/dev/null || true
+            docker rm agop-ai-backend 2>/dev/null || true
+
+            # Build new image
+            docker build --no-cache -t agop-ai-backend .
+
+            # Run new container
+            # .env file must exist at ~/agop-ai-backend.env on the VM
+            docker run -d \
+              --name agop-ai-backend \
+              --restart unless-stopped \
+              -p 8001:8000 \
+              --env-file /home/ubuntu/agop-ai-backend.env \
+              agop-ai-backend
+
+            echo "✓ agop-ai backend deployed on port 8001"
+            docker ps | grep agop-ai-backend
