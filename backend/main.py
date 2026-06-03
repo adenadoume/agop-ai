@@ -162,3 +162,21 @@ async def get_models():
         {"id": k, "label": v["label"], "input_per_m": v["input"], "output_per_m": v["output"]}
         for k, v in MODELS.items()
     ]}
+
+
+# ─── Job trigger endpoints (proxy to softone-report on 172.17.0.1:8080) ──────
+import httpx as _httpx
+
+@app.post("/api/jobs/scrape")
+async def jobs_scrape():
+    """Trigger remote job scraper via softone-report container."""
+    async with _httpx.AsyncClient() as c:
+        r = await c.post("http://172.17.0.1:8080/api/jobs/scrape", timeout=130)
+        return r.json()
+
+@app.post("/api/jobs/score")
+async def jobs_score():
+    """Trigger job scorer (DeepSeek) via softone-report container."""
+    async with _httpx.AsyncClient() as c:
+        r = await c.post("http://172.17.0.1:8080/api/jobs/score", timeout=130)
+        return r.json()
