@@ -180,3 +180,10 @@ async def jobs_score():
     async with _httpx.AsyncClient() as c:
         r = await c.post("http://172.17.0.1:8080/api/jobs/score", timeout=130)
         return r.json()
+
+@app.post("/api/jobs/add-url")
+async def jobs_add_url(url: str):
+    """Scrape a job board URL and extract listings via Firecrawl + DeepSeek."""
+    async with _httpx.AsyncClient() as c:
+        r = await c.post(f"http://172.17.0.1:8080/api/jobs/add-url", params={"url": url}, timeout=130)
+        return r.json()
